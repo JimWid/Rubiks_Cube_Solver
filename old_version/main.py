@@ -11,7 +11,7 @@ from old_version.funcs import *
 CUSTOM_MODEL_PATH = "./best.pt"
 CONFIDENCE_THRESHOLD = 0.80
 
-# Loading Custom Trained YOLOv5 Model using torch.hub
+# Loading Custom Trained Model YOLOv11n
 try:
     print("Loading YOLOv11n custom model...")
     model = YOLO(CUSTOM_MODEL_PATH)
@@ -24,6 +24,8 @@ except Exception as e:
 # Setting up Cube State
 cube_state = {face : [None] * 9 for face in KOCIEMBA_FACE_ORDER}
 current_face_state = []
+scanned_faces = []
+already_printed = False
 
 print(f"Using confidence threshold: {CONFIDENCE_THRESHOLD}\n")
 print("Scan: 1. White, 2. Red, 3. Blue, 4. Orange, 5. Green, 6. Yellow\n")
@@ -41,7 +43,7 @@ while cap.isOpened():
         print("Error: Failed to grab frame.")
         break
     
-    frame = cv2.flip(frame, 1)
+    #frame = cv2.flip(frame, 1)
     display_frame = frame.copy()
 
     # Converting frame to RGB for the model YOLOv5   
@@ -50,13 +52,13 @@ while cap.isOpened():
     detections_df = results[0].boxes.data.cpu().numpy()
 
     # Now we are only detecting the cube with the highest confidence %
-    if len(detections_df) > 0:
+    if len(detections_df) > 0 and len(scanned_faces) != 6:
         row = detections_df[detections_df[:, 4].argmax()]
         x1, y1, x2, y2, conf, cls = row
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
 
         cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(display_frame, f"Confidence: {conf*100:.2f}%", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
+        cv2.putText(display_frame, f"Confidence: {conf*100:.2f}%", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
 
         # Sticker Region Calculation (Aprox.)
         box_width = x2 - x1
@@ -96,8 +98,9 @@ while cap.isOpened():
                     cv2.rectangle(display_frame, (sticker_x1, sticker_y1), (sticker_x2, sticker_y2), (255, 0, 0), 1)
                     if color_name:
                         text_color = (0, 0, 0) if color_name in ["white", "yellow"] else (255, 255, 255)
-                        cv2.putText(display_frame, color_name[0].upper(), (sticker_x1 + 5, sticker_y1 + 20),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
+                        cv2.putText(display_frame, color_name[0].upper(), (sticker_x1 + 5, sticker_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
+                    #else:
+                        #cv2.putText(display_frame, f"H:{h} S:{s} V:{v}", (sticker_x1 + 5, sticker_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
                 else:
                     detected_face_colors.append(None) # Append None if ROI is empty (should not happen)
 
@@ -119,14 +122,17 @@ while cap.isOpened():
 
     if key == ord('c'):
         cube_state = {face: [None] * 9 for face in KOCIEMBA_FACE_ORDER}
+        current_face_state = []
+        scanned_faces = []
+        already_printed = False
         print("\n--- All scanned data cleared. ---\n")
 
     # Displaying Instructions and Status
     y_offset = 30
     scanned_faces = [face for face, colors in cube_state.items() if colors[0] is not None]
-    cv2.putText(display_frame, "Press key for the face's CENTER color:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    cv2.putText(display_frame, "Press key for the face's CENTER color:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
     y_offset += 25
-    cv2.putText(display_frame, "w:white r:red g:green y:yellow o:orange b:blue", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    cv2.putText(display_frame, "w:white r:red g:green y:yellow o:orange b:blue", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
     y_offset += 30
     cv2.putText(display_frame, f"Scanned Faces: {scanned_faces}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
@@ -138,12 +144,12 @@ while cap.isOpened():
         y_offset += 25
 
         # Showing Kociemba String, Cube State and Steps
-        if k_string:
-            print(f"\nCube State: {cube_state}")
+        if k_string and not already_printed:
+            #print(f"\nCube State: {cube_state}")
             print(f"\nKociemba String: {k_string}.\n")
             print("Your 2D cube representation:\n", display_cube(cube_state))
-            print("\n---------Steps To Follow---------")
 
+            print("\n---------Steps To Follow---------")
             solution = solve(k_string)
             print(solution)
 
@@ -151,7 +157,10 @@ while cap.isOpened():
             print("\nRemember:\n1) Faces: U = Up, R = Right, F = Front, D = Down, L = Left, and B = Back.")
             print("U, R, F, D, L and B denote the Up, Right, Front, Down, Left and Back faces of the cube." \
             "1, 2, and 3 denote a 90°, 180° and 270° clockwise rotation of the corresponding face.")
-            break
+            already_printed = True
+
+        cv2.putText(display_frame, f"Steps: {solution}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 255, 0), 2)
+        cv2.putText(display_frame, solution, (10, y_offset + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (0, 255, 0), 2)
 
     cv2.imshow("Rubiks Cube Scanner!!!", display_frame)
 

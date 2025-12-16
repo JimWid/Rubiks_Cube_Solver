@@ -57,7 +57,7 @@ Defining Your Cube: Make sure you see your cube as:
 - **Yellow: Down**
 - **Orange: Left**
 
-Once you have the center of **Green** in front of you(or the camera). **turn down** to scan **White** first, move the cube **UP** to face green again. And turn the cube **right(->)** to scan the **Red** face, then right again(->) to scan **Blue**, again to scan **Orange** and again to scan **Green**, keep Green in front of the camera and then **move up** to scan **Yellow**.
+Once you have the center of **Green** in front of you(or the camera). **turn down** to scan **White** first, move the cube **UP** to face green again. And turn the cube **right(->)** to scan the **Red** face, then right again(->) to scan **Blue**, again to scan **Orange** and again to scan **Green**, keep Green in front of the camera and then **move up** to scan **Yellow**. [Watch Video](https://youtu.be/rkV9gtoWGrM) to see how it is.
 
 # Known Limitations and Tips for Best Performance
 #### Lighting Conditions: 

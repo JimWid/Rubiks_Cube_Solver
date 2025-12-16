@@ -2,12 +2,12 @@ from collections import Counter
 
 # Color Detection Setup - HSV = HUE, SATURATION, VALUE
 HSV_RANGES = {
-    'red':    [[0, 120, 100], [8, 255, 255]], # Also covers a bit of the 0-10 range in the get_color_name function
-    'orange': [[9, 120, 100], [20, 255, 255]],
+    'red':    [[0, 130, 100], [8, 255, 255]], # Also covers a bit of the 0-10 range in the get_color_name function
+    'orange': [[6, 130, 100], [22, 255, 255]],
     'yellow': [[26, 100, 100], [40, 255, 255]],
     'green':  [[41, 80, 80], [85, 255, 255]],
     'blue':   [[86, 100, 100], [130, 255, 255]],
-    'white':  [[0, 0, 180], [179, 80, 255]] # White has low saturation and high value
+    'white':  [[0, 0, 160], [131, 60, 255]] # White has low saturation and high value
     }
         
 # Cube State Representation Setup: up, right, front, down, left and back
