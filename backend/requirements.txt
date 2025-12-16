@@ -1,0 +1,16 @@
+torch>=1.7
+opencv-python
+numpy
+pandas
+matplotlib
+seaborn
+scipy
+RubikTwoPhase
+ultralytics
+
+fastapi
+uvicorn[standard]
+ultralytics>=8.1.0
+opencv-python-headless
+pillow
+numpy

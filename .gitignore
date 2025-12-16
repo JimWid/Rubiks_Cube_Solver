@@ -1,8 +1,14 @@
 # Ignore environment variables file
-.env
+backend/venv/
 
 # Ignore Python bytecode directories
 __pycache__/
 
 # Ignore twophase module
-.twophase
+backend/app/twophase/
+
+# Ignores local database
+backend/app/cube.db
+
+# Ignores model
+backend/app/best.pt

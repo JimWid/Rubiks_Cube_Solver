@@ -4,8 +4,8 @@ import numpy as np
 from twophase.solver import solve
 from ultralytics import YOLO
 
-from display_cube import display_cube
-from funcs import *
+from old_version.display_cube import display_cube
+from old_version.funcs import *
 
 # Path to the trained model
 CUSTOM_MODEL_PATH = "./best.pt"
@@ -58,7 +58,7 @@ while cap.isOpened():
         cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
         cv2.putText(display_frame, f"Confidence: {conf*100:.2f}%", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
 
-        # Sticker Region Caculation (Aprox.)
+        # Sticker Region Calculation (Aprox.)
         box_width = x2 - x1
         box_height = y2 - y1
 
