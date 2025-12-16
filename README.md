@@ -77,6 +77,9 @@ Special thanks and credits to **[Juan Sebastian (@juanjaho)](https://github.com/
 ### Repo I took inspiration from:
 https://github.com/juanjaho/real-time-object-detection-web-app
 
+## Pictures
+<img width="551" height="564" alt="image" src="https://github.com/user-attachments/assets/083ebec9-9069-4bf7-9cd0-ea1a66d41a4b" />
+
 # License
 This project includes code adapted from GPL-licensed open-source work.
 In accordance with the GPL, this repository is released under the same license.
