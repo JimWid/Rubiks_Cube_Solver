@@ -14,7 +14,7 @@
     "lodash": "^4.17.21",
     "ndarray": "^1.0.19",
     "ndarray-ops": "^1.2.2",
-    "next": "16.0.3",
+    "next": "^16.0.10",
     "onnxruntime-web": "^1.23.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
