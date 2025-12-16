@@ -1,73 +1,102 @@
 # Rubiks Cube Solver In Real Time (Computer Vision)
-This project provides a real-time Rubik's Cube detector with color recognition built using the YOLOv11 object detection framework and a custom-trained model. It utilizes your webcam feed to identify and highlight Rubik's Cubes and its color in real-time. Once all colors are detected it will give you a set of steps to solve the cube.
-# Features
- - **Real-time Detection**: Detects Rubik's Cubes and its color live from your webcam feed.
- - **YOLOv11 Powered**: Leverages the efficient and accurate YOLOv11 architecture.
- - **Custom Trained Model**: Utilizes a specifically trained model (best.pt) optimized for Rubik's Cube detection.
- - **TwoPhase Solver**: Utilizes the module TwoPhaseSolver to generate a set of moves to solve the cube in **20 moves or less**.
-# Getting Started
-Follow these steps to get the detector up and running on your local machine.
-## Prerequisites
-### Before you begin, ensure you have the following:
-Python 3.8+ (Recommended)
-- A webcam connected to your computer
-- A stable internet connection for the initial setup
-- (Optional but Recommended) A NVIDIA GPU for faster inference. If you don't have one, the model will run on your CPU, which might be slower.
-## 1. Clone the Repository
-First, clone this project repository to your local machine:
-code: 
-```
-git clone https://github.com/JimWid/Rubiks_Cube_Solver.git
-cd Rubiks_Cube_Solver
-```
-## 2. Set up the Enviroment
-```
-python -m venv env
-```
-## Activate the virtual environment
-### On Windows:
-```
-env\Scripts\activate
-```
-### On macOS/Linux:
-```
-source env/bin/activate
-```
-### Install the required Python packages
-```
-pip install -r requirements.txt
-```
-## 3. Run Main.py file
-```
-python main.py
-```
-- The module TwoPhaseSolver will start downloading, *this may take some time*, but only on the first time you run main.py, later it wont need to load.
-- A window showing your webcam feed will open. With certain comments and intructions for the user.
-- The detector will start analyzing the feed in real-time and draw bounding boxes around the most confident Rubik's Cube detected.
-- Press the q key to quit the application.
+A full-stack Rubik's Cube Dectetor using Computer Vision, integrating a **fine-tuned** YOLOv11n to detect physical cubes via webcam in real time. Future steps are to add the backend to handle the logic to generate an optimal solution (in 20 moves or less) to solve the cube.
 
-# Important notes on Cube Orientation and Directions:
-After some try and error I have finally found the correct sequence and orientations the faces should have at the moment of scanning. (**the sequence itself is not necessary but it helps to know the orientation**) Since the program relies on Colors, make sure to follow:
-### First:
-Defining Your Cube: Make sure you see your cube as:
-- **White: UP**
-- **Green: Front**
-- **Red: Right**
-- **Blue: Back**
-- **Yellow: Down**
-- **Orange: Left**
 
-Once you have the center of **Green** in front of you(or the camera). **turn down** to scan **White** first, move the cube **UP** to face green again. And turn the cube **right(->)** to scan the **Red** face, then right again(->) to scan **Blue**, again to scan **Orange** and again to scan **Green**, keep Green in front of the camera and then **move up** to scan **Yellow**. [Watch Video](https://youtu.be/rkV9gtoWGrM) to see how it is.
+The project is designed as a production-style ML system, combining frontend inference, model deployment, and a backend solver.
+## Features (Implemented)
+- Real-time Rubik’s Cube detection using webcam input.
+- Model YOLOv11n.onnx object detection running fully in the browser.
+- ONNX Runtime Web for fast client-side inference.
+- Webcame draws bounding boxes, and displays confidence + FPS.
+- Can either do **live detection** or **take a pic of the frame** to detect.
+- Deployed frontend using Vercel
 
-# Known Limitations and Tips for Best Performance
-#### Lighting Conditions: 
-The model performs best in well-lit environments. Poor lighting, excessive shadows, or glare can reduce detection on cube and color accuracy.
-#### Background Clutter: 
-A plain, contrasting background behind the Rubik's Cube can improve detection reliability.
-#### Object Distance and Angle: 
-The model is trained on a variety of distances and angles, but extreme close-ups, far distances, or unusual orientations might sometimes be challenging. Try presenting the cube clearly in the camera's view.
-#### Performance: 
-On CPU, detection might be noticeably slower, leading to a lower frame rate. For real-time smooth performance, a GPU is highly recommended.
- - **Color Performance**: It is very confident and succesful with most of the colors in the right lighting, most complicated color to detect is Orange getting confused by Red (**this has improved**).
- - **Confidence Threshold**: If the detector isn't picking up cubes, you might need to adjust the CONFIDENCE_THRESHOLD variable in main.py. Lowering it could show more detections (including potential      false positives), while raising it makes detections stricter.
- - **Solver Performance**: The kociemba string is well generated, but I hypothesis that it needs to be in the right angle and orientation for the kociemba solver to actually accept it. Otherwise it        will get an error. Try to find the correct posture of every face. I'm working on this matter since its very frustrating.
+## What is to come!
+- Cube state extraction (face colors → cube notation)
+- FastAPI backend for solving logic
+- Two-Phase Solver for optimal cube solutions
+- Dockerized backend deployment
+- Frontend ↔ Backend API integration
+
+## Architecture
+```
+Frontend / src
+ ├── app/
+ │    └── page.tsx           # Main page (calling Yolo component)
+ │
+ ├── components/
+ │    ├── Yolo.tsx           # Yolo (adding both components)
+ │    ├── runModel.tsx       # Calling Model
+ │    └── videoDetector.tsx  # Webcame Component
+ │
+ └── lib/
+      └── api.js             # Api handleling
+
+Backend                      # Still not in use
+ ├── app/
+ ├── Dockerfile
+ └── requirements.txt
+
+old_version                  # This is the older version already with Detection + Solver but only on Python.
+ ├── display_cube.py 
+ ├── funcs.py
+ └── main.py
+```
+## Model Details
+- Model: YOLOv11n.onnx (fined-tuned to detect rubik's cube)
+- Input: Live webcam frames
+- Output: Bounding Boxes + class confidence
+- Postprocessing:
+  - Confidence thresholding
+  - Non-Maximum Suppression (NMS)
+  - Canvas rendering
+    
+## Live Demo!
+You can try it right here!
+### Live Site:
+[rubiks-cube-solver.vercel.app](http://rubiks-cube-solver-xi.vercel.app/)
+
+## Tech Stack:
+### Frontend
+- Next.js
+- TypeScript
+- ONNX Runtime Web
+
+### Backend
+- FastAPI
+- Python
+- Two-Phase Rubik’s Cube Solver
+- Docker
+
+## Acknowledgements and Credits
+The frontend develepment and logic from this project was highly inspired and took reference from an existing open-source work in the computer vision and object detection community!
+
+I would like to give special thanks to the original author whose work served as a strong fundation for this project.
+
+Special thanks and credits to **[Juan Sebastian (@juanjaho)](https://github.com/juanjaho)**
+### Repo I took inspiration from:
+https://github.com/juanjaho/real-time-object-detection-web-app
+
+# License
+This project includes code adapted from GPL-licensed open-source work.
+In accordance with the GPL, this repository is released under the same license.
+
+All original authors retain credit for their respective contributions.
+
+```
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0) or any later version.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+```
+For more info read [LICENSE](LICENSE) here.
