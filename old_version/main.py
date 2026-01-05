@@ -1,14 +1,14 @@
 import cv2
 import sys
 import numpy as np
-from twophase.solver import solve
+from backend.app.twophase import solve
 from ultralytics import YOLO
 
-from old_version.display_cube import display_cube
-from old_version.funcs import *
+from display_cube import display_cube
+from funcs import *
 
 # Path to the trained model
-CUSTOM_MODEL_PATH = "./best.pt"
+CUSTOM_MODEL_PATH = "frontend/public/models/yolo11n.onnx"
 CONFIDENCE_THRESHOLD = 0.80
 
 # Loading Custom Trained Model YOLOv11n

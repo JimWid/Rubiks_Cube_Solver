@@ -1,8 +1,8 @@
 "use client"
 
 import Webcam from 'react-webcam';
-import { useRef, useState, useEffect, useLayoutEffect } from 'react';
-import { createModel, LoadModel } from './runModel';
+import { useRef, useState, useEffect} from 'react';
+import { LoadModel } from './runModel';
 import { InferenceSession, Tensor } from 'onnxruntime-web';
 
 const ObjectDetectionCamera = (props: {
@@ -71,6 +71,8 @@ const ObjectDetectionCamera = (props: {
     );
 
     props.postprocess(outputTensor, inferenceTime, ctx, props.modelName);
+
+    
     setInferenceTime(inferenceTime);
   };
 

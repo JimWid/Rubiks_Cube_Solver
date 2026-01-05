@@ -7,7 +7,7 @@ import ObjectDetectionCamera from './videoDetector';
 import { round } from 'lodash';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { createModel, LoadModel } from './runModel';
+import { createModel } from './runModel';
 
 const RES_TO_MODEL: [number[], string][] = [
   [[256, 256], 'yolo11n.onnx']];
