@@ -8,6 +8,7 @@ import { round } from 'lodash';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { createModel } from './runModel';
+import { generateKociembaString } from '../lib/colors';
 
 const RES_TO_MODEL: [number[], string][] = [
   [[256, 256], 'yolo11n.onnx']];
@@ -19,10 +20,20 @@ const Yolo = (props: any) => {
   const [modelName, setModelName] = useState<string>(RES_TO_MODEL[0][1]);
   const [session, setSession] = useState<any>(null);
 
+  // Color scanning state
+  const [scannedFaces, setScannedFaces] = useState<Record<string, string[]>>({
+    U: [],
+    R: [],
+    F: [],
+    D: [],
+    L: [],
+    B: [],
+  });
+  const [currentFace, setCurrentFace] = useState<'U'|'R'|'F'|'D'|'L'|'B'>('U');
+
   useEffect(() => {
     const getSession = async () => {
       try {
-        // Use the public folder path. Make sure you placed the model under frontend/public/models/
         const session = await createModel(`/models/${modelName}`);
         setSession(session);
       } catch (e) {
@@ -158,39 +169,53 @@ const Yolo = (props: any) => {
     ctx: CanvasRenderingContext2D,
     modelName: string
   ) => {
-    // Output tensor of yolov7-tiny is [det_num, 7]
-    // while yolov10n is [1, all_boxes, 6]
-    // Thus we need to handle them differently
-
     if (modelName in postprocessMap) {
       console.log('Using postprocess for', modelName);
-      postprocessMap[modelName](ctx, modelResolution, tensor, conf2color);
+      // Run postprocess (it may return detections but this component doesn't store them)
+      try {
+        await postprocessMap[modelName](ctx, modelResolution, tensor, conf2color);
+      } catch (e) {
+        console.error('postprocess error', e);
+      }
     }
   };
 
+  const onFaceScanned = (face: 'U'|'R'|'F'|'D'|'L'|'B', colors: string[]) => {
+    setScannedFaces((prev) => ({ ...prev, [face]: colors }));
+  };
+
   return (
-    <ObjectDetectionCamera
-      width={props.width}
-      height={props.height}
-      preprocess={preprocess}
-      postprocess={postprocess}
-      // resizeCanvasCtx={resizeCanvasCtx}
-      session={session}
-      changeCurrentModelResolution={changeModelResolution}
-      currentModelResolution={modelResolution}
-      modelName={modelName}
-    />
+    <div>
+      <ObjectDetectionCamera
+        width={props.width}
+        height={props.height}
+        preprocess={preprocess}
+        postprocess={postprocess}
+        // resizeCanvasCtx={resizeCanvasCtx}
+        session={session}
+        changeCurrentModelResolution={changeModelResolution}
+        currentModelResolution={modelResolution}
+        currentFace={currentFace}
+        setCurrentFace={setCurrentFace}
+        onClearScans={() => setScannedFaces({ U: [], R: [], F: [], D: [], L: [], B: [] })}
+        onFaceScanned={onFaceScanned}
+        scannedFaces={scannedFaces}
+        modelName={modelName}
+      />
+    </div>
   );
 };
 
 export default Yolo;
+
+type Detection = { x0:number; y0:number; x1:number; y1:number; confidence:number; classId:number };
 
 type PostprocessFunction = (
   ctx: CanvasRenderingContext2D,
   modelResolution: number[],
   tensor: Tensor,
   conf2color: (conf: number) => string
-) => void;
+) => Promise<Detection[]> | Detection[] | void;
 
 // Non-Maximum Suppression helper function
 const applyNMS = (
@@ -255,7 +280,7 @@ const calculateIoU = (
   return intersectionArea / unionArea;
 };
 
-const postprocessYolov11: PostprocessFunction = (
+const postprocessYolov11: PostprocessFunction = async (
   ctx: CanvasRenderingContext2D,
   modelResolution: number[],
   tensor: Tensor,
@@ -272,14 +297,7 @@ const postprocessYolov11: PostprocessFunction = (
   const numAnchors = tensor.dims[2]; // 1344
   const confidenceThreshold = 0.40;
 
-  const detections: Array<{
-    x0: number;
-    y0: number;
-    x1: number;
-    y1: number;
-    confidence: number;
-    classId: number;
-  }> = [];
+  const detections: Detection[] = [];
 
   // Process each anchor
   for (let i = 0; i < numAnchors; i++) {
@@ -305,29 +323,23 @@ const postprocessYolov11: PostprocessFunction = (
 
     // Filter by confidence threshold
     if (maxClassScore > confidenceThreshold) {
-      // Convert center coordinates to corner coordinates
+      // Convert center coordinates to corner coordinates (model coordinates)
       const x0 = x_center - width / 2;
       const y0 = y_center - height / 2;
       const x1 = x_center + width / 2;
       const y1 = y_center + height / 2;
 
-      detections.push({
-        x0: x0,
-        y0: y0,
-        x1: x1,
-        y1: y1,
-        confidence: maxClassScore,
-        classId: maxClassId,
-      });
+      detections.push({ x0, y0, x1, y1, confidence: maxClassScore, classId: maxClassId });
     }
   }
 
   // Apply Non-Maximum Suppression (simple version)
   const nmsDetections = applyNMS(detections, 0.4);
 
-  // Draw the detections
+  const canvasDetections: Detection[] = [];
+
+  // Draw the detections (scaled to canvas) and collect canvas-space boxes
   for (const detection of nmsDetections) {
-    // Scale to canvas size
     const x0 = detection.x0 * dx;
     const y0 = detection.y0 * dy;
     const x1 = detection.x1 * dx;
@@ -349,8 +361,10 @@ const postprocessYolov11: PostprocessFunction = (
     ctx.fillStyle = color;
     ctx.fillText(label, x0, y0 - 5);
 
-    // Fill rect with transparent color
-    ctx.fillStyle = color.replace(')', ', 0.2)').replace('rgb', 'rgba');
-    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    // NOTE: removed transparent fill to avoid overlapping color tint
+
+    canvasDetections.push({ x0, y0, x1, y1, confidence: detection.confidence, classId: detection.classId });
   }
+
+  return canvasDetections;
 };

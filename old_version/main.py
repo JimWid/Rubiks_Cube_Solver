@@ -66,22 +66,33 @@ while cap.isOpened():
 
         # Calculation ROI: Region Of Interest
         # For every sticker in a 3x3 grid + adding a padding to avoid black borders between stickers
-        padding_x = int(box_width * 0.1) // 3
-        padding_y = int(box_height * 0.1) // 3
-        sticker_width = (box_height - 2 * padding_x * 3) // 3
-        sticker_height = (box_height - 2 * padding_y * 3) // 3
+        padding_x = int((box_width * 0.1) / 3)
+        padding_y = int((box_height * 0.1) / 3)
+
+        # sticker sizes (width uses box_width, height uses box_height)
+        sticker_width = max(1, (box_width - 2 * padding_x * 3) // 3)
+        sticker_height = max(1, (box_height - 2 * padding_y * 3) // 3)
 
         detected_face_colors = []
 
-        for row in range(3): # Row of 3
-            for col in range(3): # Column of 3
-                sticker_x1 = x1 + col * (sticker_width + 2 * padding_x) + padding_x
-                sticker_y1 = y1 + row * (sticker_height + 2 * padding_y) + padding_y
+        for r in range(3): # Row of 3
+            for c in range(3): # Column of 3
+                sticker_x1 = x1 + c * (sticker_width + 2 * padding_x) + padding_x
+                sticker_y1 = y1 + r * (sticker_height + 2 * padding_y) + padding_y
                 sticker_x2 = sticker_x1 + sticker_width
-                sticker_y2 = sticker_y1 + sticker_height   
+                sticker_y2 = sticker_y1 + sticker_height
+
+                # Clip coordinates to frame bounds
+                sticker_x1_clipped = max(0, min(sticker_x1, frame.shape[1] - 1))
+                sticker_y1_clipped = max(0, min(sticker_y1, frame.shape[0] - 1))
+                sticker_x2_clipped = max(0, min(sticker_x2, frame.shape[1]))
+                sticker_y2_clipped = max(0, min(sticker_y2, frame.shape[0]))
 
                 # ROI = Region Of Interest
-                sticker_roi = frame[sticker_y1:sticker_y2, sticker_x1:sticker_x2]
+                if sticker_y2_clipped > sticker_y1_clipped and sticker_x2_clipped > sticker_x1_clipped:
+                    sticker_roi = frame[sticker_y1_clipped:sticker_y2_clipped, sticker_x1_clipped:sticker_x2_clipped]
+                else:
+                    sticker_roi = np.array([])
 
                 if sticker_roi.size > 0:
                     # Converting ROI to HSV
@@ -94,13 +105,11 @@ while cap.isOpened():
                     color_name = get_color_name(h, s, v)
                     detected_face_colors.append(color_name)
 
-                    # Drawing feedback on display frame
-                    cv2.rectangle(display_frame, (sticker_x1, sticker_y1), (sticker_x2, sticker_y2), (255, 0, 0), 1)
+                    # Drawing feedback on display frame (grid drawn inside the detection loop)
+                    cv2.rectangle(display_frame, (sticker_x1_clipped, sticker_y1_clipped), (sticker_x2_clipped, sticker_y2_clipped), (255, 0, 0), 1)
                     if color_name:
                         text_color = (0, 0, 0) if color_name in ["white", "yellow"] else (255, 255, 255)
-                        cv2.putText(display_frame, color_name[0].upper(), (sticker_x1 + 5, sticker_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
-                    #else:
-                        #cv2.putText(display_frame, f"H:{h} S:{s} V:{v}", (sticker_x1 + 5, sticker_y1 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
+                        cv2.putText(display_frame, color_name[0].upper(), (sticker_x1_clipped + 5, sticker_y1_clipped + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_color, 2)
                 else:
                     detected_face_colors.append(None) # Append None if ROI is empty (should not happen)
 

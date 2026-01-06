@@ -4,6 +4,7 @@ import Webcam from 'react-webcam';
 import { useRef, useState, useEffect} from 'react';
 import { LoadModel } from './runModel';
 import { InferenceSession, Tensor } from 'onnxruntime-web';
+import { ColorGrid } from '../lib/colors';
 
 const ObjectDetectionCamera = (props: {
   width: number;
@@ -16,10 +17,16 @@ const ObjectDetectionCamera = (props: {
     inferenceTime: number,
     ctx: CanvasRenderingContext2D,
     modelName: string
-  ) => void;
+  ) => Promise<any> | any;
   currentModelResolution: number[];
   changeCurrentModelResolution: (width?: number, height?: number) => void;
+  currentFace?: 'U' | 'D' | 'L' | 'R' | 'F' | 'B';
+  setCurrentFace?: (face: 'U' | 'D' | 'L' | 'R' | 'F' | 'B') => void;
+  onClearScans?: () => void;
+  onFaceScanned?: (face: 'U'|'R'|'F'|'D'|'L'|'B', colors: string[]) => void;
+  scannedFaces?: Record<string, string[]>;
 }) => {
+
   const [inferenceTime, setInferenceTime] = useState<number>(0);
   const [totalTime, setTotalTime] = useState<number>(0);
   const webcamRef = useRef<Webcam>(null);
@@ -60,7 +67,7 @@ const ObjectDetectionCamera = (props: {
     }
     return context;
   };
-
+  
   const runModel = async (ctx: CanvasRenderingContext2D) => {
     const data = props.preprocess(ctx);
     let outputTensor: Tensor;
@@ -69,10 +76,13 @@ const ObjectDetectionCamera = (props: {
       props.session,
       data
     );
-
-    props.postprocess(outputTensor, inferenceTime, ctx, props.modelName);
-
-    
+    if (props.postprocess) {
+      try {
+        await props.postprocess(outputTensor, inferenceTime, ctx, props.modelName);
+      } catch (e) {
+        console.error('postprocess error', e);
+      }
+    }
     setInferenceTime(inferenceTime);
   };
 
@@ -115,6 +125,7 @@ const ObjectDetectionCamera = (props: {
     var context = videoCanvasRef.current!.getContext('2d')!;
     context.clearRect(0, 0, originalSize.current[0], originalSize.current[1]);
     liveDetection.current = false;
+    props.onClearScans && props.onClearScans();
   };
 
   const [SSR, setSSR] = useState<Boolean>(true);
@@ -231,7 +242,7 @@ const ObjectDetectionCamera = (props: {
             </button>
           </div>
 
-          <div className="flex items-center justify-between w-1/2 p-5">
+          <div className="flex items-center justify-between w-3/4 p-5">
             <div>Model: {props.modelName}</div>
             <div>{'FPS: ' + (1000 / totalTime).toFixed(2)}</div>
           </div>
@@ -239,8 +250,47 @@ const ObjectDetectionCamera = (props: {
       </div>
       </div>
       {/* RIGHT COLUMN */}
-      <div className="flex flex-col p-5 w-full">
-        
+      <div className="flex flex-col p-5 w-full h-150">
+        <div className="mt-2 flex flex-col gap-5 items-start">
+          {(['U','R','F','D','L','B'] as const).map((f) => (
+            <div key={f} className="flex items-center gap-2 w-full">
+            <button
+              onClick={async () => {
+                // Set the current face in parent
+                props.setCurrentFace?.(f);
+                // Capture current canvas
+                const ctx = capture();
+                if (!ctx) return;
+              }}
+
+              className={
+                "py-3 px-6 text-sm border border-gray-300 rounded-lg shadow-xs bg-white font-semibold text-gray-900 transition-all duration-500 hover:bg-gray-200 " +
+                (props.currentFace === f ? 'bg-blue-200' : '')
+              }
+            >
+              {f}
+            </button>
+
+            <div className="text-sm text-gray-800">
+              {props.scannedFaces && props.scannedFaces[f] && props.scannedFaces[f].length ? (
+                <span>{props.scannedFaces[f].join(', ')}</span>
+              ) : (
+                <span className="text-gray-400">empty</span>
+              )}
+            </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 flex flex-col gap-10 items-center text-sm text-gray-900">
+          <button 
+              className="py-3 px-6 text-sm border border-gray-300 rounded-lg shadow-xs bg-white font-semibold text-gray-900 transition-all duration-500 hover:bg-gray-200">
+            Solve!
+          </button>
+        </div>
+        <div className="mt-10 flex flex-col gap-10 items-start text-sm text-gray-900">
+          <span>Kociemba String: {""}</span>
+          <span>Steps To Follow: {""}</span>
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ export default function Home() {
       <main className="font-mono flex flex-col justify-center items-center  w-screen">
         <h1 className="m-5 text-xl font-bold">Rubik's Cube Detector + Solver</h1>
         <Yolo />
-        <footer>
+        <footer className="mt-50 text-gray-500">
           Created By @JimWid
         </footer>
       </main>
